@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RQ | Anime_Music</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/REDYQ/RQ/refs/heads/main/project/Anime_Music/icon.jpg">
   <style>
     :root { --accent: #F44336; }
     * { -webkit-tap-highlight-color: transparent; outline: none !important; box-sizing: border-box; }
@@ -41,7 +42,7 @@
 
     #player-frame { 
       display: none; position: fixed; top: 60px; left: 0; 
-      width: 100vw; height: calc(100vh - 60px); border: none; z-index: 500; background: #000;
+      width: 100vw; height: calc(100vh - 60px); border: none; z-index: 500; background: #000; will-change: height;
     }
   </style>
 </head>
@@ -71,7 +72,7 @@
   <iframe id="player-frame" src="view_1.html"></iframe>
 
   <script>
-    const JSON_URL = 'https://raw.githubusercontent.com/REDYQ/RQ/refs/heads/main/project/Anime_Music/data.json!';
+    const JSON_URL = 'https://raw.githubusercontent.com/REDYQ/RQ/refs/heads/main/project/Anime_Music/data.json';
     const frame = document.getElementById('player-frame');
     const exitBtn = document.getElementById('exit-player');
     const mini = document.getElementById('mini-player');
@@ -138,6 +139,21 @@
     });
 
     loadFolders();
+    
+    function updateIframeHeight() {
+   		const availableHeight = window.innerHeight - 60;
+   		const frame = document.getElementById('player-frame');
+    
+   		if (frame) {
+       		frame.style.height = availableHeight + 'px';
+ 		  }
+	 }
+
+	window.addEventListener('load', updateIframeHeight);
+	window.addEventListener('resize', updateIframeHeight);
+	window.addEventListener('orientationchange', () => {
+   	setTimeout(updateIframeHeight, 200);
+	});
   </script>
 </body>
 </html>
