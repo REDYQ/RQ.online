@@ -11,16 +11,24 @@
             --glass: rgba(255, 255, 255, 0.08);
             --text-outline: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
         }
-        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
+        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; scrollbar-width: none; -ms-overflow-style: none; }
+        
+		*::-webkit-scrollbar {
+ 		  width: 0;
+		   height: 0;
+		   display: none;
+		   background: transparent;
+		}
+        
         body { 
             background: #000; background: radial-gradient(circle at center, var(--bg-dynamic) 0%, #000 100%);
             transition: background 1s ease; display: flex; justify-content: center; align-items: center; 
-            height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; 
+            height: 100vh; height: calc(var(--vh, 1vh) * 100); height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; 
         }
         
         #bg-video {
             position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
-            width: auto; height: auto; z-index: -1; transform: translate(-50%, -50%);
+            width: auto; height: calc(100vh - 40px); height: calc((var(--vh, 1vh) * 100) - 40px); z-index: -1; transform: translate(-50%, -50%);
             object-fit: cover; opacity: 0; transition: opacity 1s; pointer-events: none;
         }
         
@@ -52,7 +60,13 @@
         #track-name { font-size: 20px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: var(--text-outline); }
         #track-author { font-size: 14px; margin: 2px 0 0; opacity: 0.7; }
 
-        .list-container { width: 100%; flex: 1; overflow-y: auto; padding: 5px; }
+        .list-container { width: 100%; flex: 1; overflow-y: auto; padding: 5px; -ms-overflow-style: none; scrollbar-width: none; }
+        
+		.list-container::-webkit-scrollbar {
+		    width: 0;
+		    display: none;
+		 }
+        
         .track-item { display: flex; align-items: center; padding: 10px; border-radius: 15px; margin-bottom: 8px; cursor: pointer; background: rgba(255,255,255,0.02); transition: 0.2s; }
         .track-item.active { background: rgba(255,255,255,0.12); }
         .item-icon { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; margin-right: 12px; flex-shrink: 0; }
@@ -106,63 +120,112 @@
 
         #toast { position: fixed; bottom: 12%; left: 50%; transform: translateX(-50%); background: rgba(255,67,54,0.9); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 1000; opacity: 0; transition: 0.3s; pointer-events: none; }
         
-		@media (orientation: landscape) and (max-height: 500px) {
-			.screen { 
-  		      flex-direction: row !important;
-   		     max-width: 90vw !important; 
-  		      height: 85vh !important; 
-    		    padding: 15px 25px !important;
- 		       margin-bottom: 0 !important;
-		    }
- 		   .top-group { 
- 		       display: flex !important;
-   		     flex-direction: row !important;
-    		    align-items: center !important;
- 		       text-align: left !important;
-   		     margin-top: 0 !important;
-  		      flex: 1.3 !important;
-  		      gap: 20px !important;
-		     }
-			#icon { width: 130px !important; height: 130px !important; margin-bottom: 0 !important; }
-			.track-info { text-align: left; flex: 1; }
-			#player-screen > div:last-child {
-    		    flex: 1;
-    		    display: flex;
-    		    flex-direction: column;
-     		   justify-content: center;
-  		  }
-   		 #back-to-list, #open-info { top: 15px !important; }
-   
-			#playlist-screen > div:first-child {
-     			 padding: 5px 10px !important;
-      			margin-bottom: 5px !important;
-  		   }
-  
- 			#playlist-screen span {
-      			font-size: 16px !important;
- 		    }
-    
-  		  #playlist-screen {
-     			max-width: 85vw !important; 
-       		  height: 90vh !important;
-       		  margin-bottom: 0 !important;
-       		  padding: 10px 20px !important;
-    			 flex-direction: column !important;
-  		   }
+@media (orientation: landscape) and (max-height: 500px) {
+    .screen { 
+        flex-direction: row !important;
+        max-width: 95vw !important; 
+        padding: 15px 25px !important;
+        margin-bottom: 0 !important;
+        
+        height: 100% !important; 
+        max-height: 100% !important;
+        margin: 0 !important;
+    }
 
- 		   #playlist-screen .list-container {
-     			display: grid !important;
-      		   grid-template-columns: 1fr 1fr !important;
-      		   gap: 10px !important; 
-    		     max-height: 55vh !important;
- 		        overflow-y: auto !important;
-				 padding: 0 5px !important;
-  		   }
-  
-  		 .group-header {
-     			  grid-column: 1 / -1;
-   		  }
-		}
+    .top-group { 
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        text-align: left !important;
+        margin-top: 0 !important;
+        flex: 1.3 !important;
+        gap: 10px !important;
+    }
+    #icon { width: 110px !important; height: 110px !important; margin-bottom: 0 !important; }
+    .track-info { text-align: left !important; flex: 1 !important; }
+
+    #player-screen > div:last-child {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    #back-to-list, #open-info { top: 15px !important; }
+
+    #playlist-screen {
+        max-width: 90vw !important; 
+        height: 90vh !important;
+        margin-bottom: 0 !important;
+        padding: 10px 20px !important;
+        flex-direction: column !important;
+    }
+
+    #playlist-screen > div:first-child {
+        padding: 5px 10px !important;
+        margin-bottom: 5px !important;
+    }
+    #playlist-screen span { font-size: 16px !important; }
+
+    #playlist-screen .list-container {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+        gap: 10px !important; 
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+        padding: 0 5px !important;
+    }
+
+    .group-header { grid-column: 1 / -1 !important; }
+    
+#info-modal {
+    width: 90% !important;
+    padding: 15px 20px !important;
+    top: 50% !important;
+    max-height: 90vh !important; 
+    overflow-y: auto !important; 
+}
+
+#info-modal .info-item {
+    margin-bottom: 5px !important;
+}
+
+#info-modal div[style*="margin-top: 35px"] {
+    margin-top: 10px !important; 
+}
+
+#info-modal .bg-switcher {
+    margin-top: 5px !important;
+}
+
+#btn-watch-video {
+    margin-top: 10px !important;
+    padding: 8px !important; 
+}
+
+#toast { 
+    bottom: 30px !important;
+    font-size: 11px !important; 
+    padding: 6px 12px !important;
+    white-space: nowrap !important; 
+    z-index: 10000 !important;
+}
+
+    .controls { 
+        gap: 8px !important; 
+    }
+    
+    .btn-play { 
+        width: 50px !important; 
+        height: 50px !important; 
+    }
+
+    .loader { 
+        width: 55px !important; 
+        height: 55px !important; 
+    }
+
+}
 		
 		.group-header {
 			   width: 100%;
@@ -233,24 +296,19 @@
 </div>
 
 <div class="screen screen-active" id="playlist-screen">
-<!--*-->
 	<div style="width:100%; display: flex; justify-content: space-between; align-items: center; padding: 5px 0px 15px 10px;">
         <span style="font-size:22px; font-weight:bold;">Музыка</span>
         
      <div style="display: flex; gap: 0px;">
-        <!-- Кнопка сворачивания (черточка) -->
         <button class="btn btn-anim" onclick="minimizePlayer()" style="padding: 5px; opacity: 0.8;">
             <svg width="24" height="24" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
         </button>
-        
-        <!-- Новая кнопка закрытия (крестик) -->
         <button class="btn btn-anim" onclick="closeFullPlayer()" style="padding: 5px; opacity: 0.8;">
             <svg width="24" height="24" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
     </div>
         
     </div>
-<!--*-->
     <div class="list-container" id="list"></div>
 </div>
 
@@ -325,7 +383,6 @@
 	   });
  	  document.getElementById('list').innerHTML = html;
 	}
-
 
     function selectTrack(i) {
         if (currentIdx === i && audio.src) toggleScreen('player');
@@ -436,7 +493,6 @@
         listScr.classList.add('screen-active');
     }
 }
-
     
     function updateIcons() { document.getElementById('sh-icon').innerHTML = isShuffle ? icons.shRan : icons.shOrd; document.getElementById('re-icon').innerHTML = isRepOne ? icons.reOne : icons.reNon; }
     
@@ -473,13 +529,10 @@
     audio.onended = () => { if (isRepOne) audio.play(); else nextTrack(); };
     
     audio.ontimeupdate = () => { 
-        // 1. Обновляем полоску прогресса
         const progress = (audio.currentTime / audio.duration * 100);
         document.getElementById('p-bar').style.width = (progress || 0) + '%'; 
         
-        // 2. СИНХРОНИЗАЦИЯ ВИДЕО-ФОНА (Исправлено)
         if (currentBgMode === 'video' && videoBg.duration) {
-            // Если аудио на паузе или грузится — стопим видео
             if (audio.paused || audio.seeking) {
                 if (!videoBg.paused) videoBg.pause();
             } else {
@@ -487,13 +540,11 @@
             }
 
             const videoPos = audio.currentTime % videoBg.duration;
-            // Уменьшили порог до 0.2 сек для точности
             if (Math.abs(videoBg.currentTime - videoPos) > 0.2) {
                 videoBg.currentTime = videoPos;
             }
         }
 
-        // 3. Обновляем цифры времени
         document.getElementById('curr').innerText = fmt(audio.currentTime); 
         if(!isNaN(audio.duration)) {
             document.getElementById('dur').innerText = fmt(audio.duration); 
@@ -514,7 +565,6 @@
 window.addEventListener('message', (e) => {
     if (e.data.type === 'LOAD_PLAYLIST') { 
         JSON_URL = e.data.url; 
-        // Принудительно сбрасываем флаг, чтобы новый список точно загрузился
         isInitializing = false; 
         init(); 
         toggleScreen('list'); 
@@ -552,6 +602,29 @@ window.addEventListener('message', (e) => {
 function closeFullPlayer() {
     window.parent.postMessage({ type: 'CLOSE_PLAYER' }, '*');
 }
+
+window.addEventListener('resize', () => {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+    
+    if (videoContainer.style.display === 'flex') {
+        fullVideo.style.maxHeight = (window.innerHeight * 0.7) + 'px';
+    }
+});
+
+window.dispatchEvent(new Event('resize'));
+
+function fixHeight() {
+    setTimeout(() => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        document.body.style.height = (vh * 100) + 'px';
+    }, 150);
+}
+
+window.addEventListener('resize', fixHeight);
+window.addEventListener('orientationchange', fixHeight);
+fixHeight();
 
 </script>
 </body>
