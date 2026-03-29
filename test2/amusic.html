@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RQ | Anime_Music</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/REDYQ/RQ/refs/heads/main/project/Anime_Music/icon.jpg">
+  <style>
+    :root { --accent: #F44336; }
+    * { -webkit-tap-highlight-color: transparent; outline: none !important; box-sizing: border-box; scrollbar-width: none; }
+    body { background: #000; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding-top: 70px; overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; -ms-overflow-style: none; }
+
+    header { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+      background: rgba(26, 26, 26, 0.95); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: space-between; 
+      padding: 0 20px; z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .search-box { position: relative; display: flex; align-items: center; width: 45%; }
+    #search-input { background: #333; border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px 12px 8px 35px; border-radius: 10px; font-size: 14px; width: 100%; }
+    .search-box svg { position: absolute; left: 10px; fill: rgba(255,255,255,0.5); width: 16px; height: 16px; }
+
+    #exit-player { 
+      background: transparent; color: white; border: 1.5px solid var(--accent);
+      padding: 6px 12px; border-radius: 8px; cursor: pointer; display: none; 
+      font-weight: 600; font-size: 11px; text-transform: uppercase;
+    }
+    .container { width: 100%; max-width: 800px; margin: 0 auto; padding: 15px; padding-bottom: 100px; flex: 1; }
+    .folder-item { display: flex; align-items: center; background: #1a1a1a; margin-bottom: 12px; padding: 12px; border-radius: 15px; cursor: pointer; }
+    .folder-icon { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+    .folder-info { margin-left: 15px; }
+
+    #mini-player {
+      position: fixed; bottom: -100px; left: 0; width: 100%; height: 75px;
+      background: #1e1e1e; border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; padding: 0 15px; z-index: 1100; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #mini-player.active { bottom: 0; }
+    .mini-img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; margin-right: 12px; flex-shrink: 0; }
+    .mini-info { flex: 1; overflow: hidden; }
+    .mini-btn { background: none; border: none; color: white; padding: 10px; cursor: pointer; }
+
+    #player-frame { 
+      display: none; position: fixed; top: 60px; left: 0; 
+      width: 100vw; height: calc(100vh - 60px); border: none; z-index: 500; background: #000; will-change: height;
+    }
+    
+    footer {
+      margin-top: auto;
+      padding: 40px 20px;
+      background: #0d1117;
+      border-top: 1px solid #30363d;
+      text-align: center;
+      color: #8b949e;
+      font-size: 14px;
+    }
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    
+.hidden { display: none !important; }
+body.player-active { padding-top: 0; }
+#player-frame.full-screen { top: 0; height: 100vh !important; }
+
+.hide-ui { display: none !important; }
+.full-frame { top: 0 !important; height: 100vh !important; }
+
+@media (orientation: landscape) and (max-height: 500px) {
+  #player-frame.full-frame {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    display: block !important;
+}
+}
+
+body.no-scroll {
+    overflow: hidden !important;
+    padding-top: 0 !important;
+    height: 100vh !important;
+}
+
+#player-frame.full-frame {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 9999 !important;
+    margin: 0 !important;
+}
+
+::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background: transparent; 
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    <div style="font-weight:bold" id="brand-name">Anime_Music</div>
+    <div class="search-box" id="search-container">
+      <input type="text" id="search-input" placeholder="Поиск...">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    </div>
+  </header>
+
+  <div class="container" id="folder-list"></div>
+
+  <div id="mini-player" onclick="openFullPlayer()">
+    <img id="m-img" class="mini-img" src="">
+    <div class="mini-info">
+      <div id="m-name" style="font-size:14px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-Name-</div>
+      <div id="m-author" style="font-size:12px;opacity:0.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">-Author-</div>
+    </div>
+    <button class="mini-btn" onclick="event.stopPropagation(); togglePlay()">
+       <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path id="m-path" d="M8 5v14l11-7z"/></svg>
+    </button>
+  </div>
+
+  <iframe id="player-frame" src="view_1.html"></iframe>
+
+  <footer>
+    <div>&copy; REDYQ | 2020-<span id="current-year"></span></div>
+    <div style="margin-top: 10px;">
+      <a href="mailto:commoncompanyredyq@gmail.com">Contact Us</a>
+      <a href="https://redyq.github.io/RQ.online/policy.html">Privacy Policy</a>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+  
+    const JSON_URL = 'https://raw.githubusercontent.com/REDYQ/Anime_Music/refs/heads/main/file/data.json';
+    const frame = document.getElementById('player-frame');
+    const mini = document.getElementById('mini-player');
+    const searchInput = document.getElementById('search-input');
+    const searchContainer = document.getElementById('search-container');
+    let currentLoadedUrl = "";
+    let hasPlayedOnce = false;
+
+    async function loadFolders() {
+      try {
+        const res = await fetch(JSON_URL);
+        const data = await res.json();
+        const list = document.getElementById('folder-list');
+        list.innerHTML = '';
+        data.forEach((item) => {
+          const div = document.createElement('div');
+          div.className = 'folder-item';
+          div.setAttribute('data-name', item.name.toLowerCase());
+          div.innerHTML = `<img src="${item.icon}" class="folder-icon"><div class="folder-info"><b>${item.name}</b><br></div>`;
+          div.onclick = () => {
+          
+  		document.querySelector('header').classList.add('hide-ui');
+  		document.querySelector('footer').classList.add('hide-ui');
+		  document.body.style.paddingTop = '0';
+
+		  frame.style.display = 'block';
+		  frame.classList.add('full-frame');
+		
+		  updateIframeHeight();
+		
+		  searchContainer.style.display = 'none';
+		  mini.classList.remove('active');
+            
+            if (currentLoadedUrl !== item.data) {
+                currentLoadedUrl = item.data;
+                frame.contentWindow.postMessage({ type: 'LOAD_PLAYLIST', url: item.data }, '*');
+            } else { frame.contentWindow.postMessage({ type: 'SHOW_LIST_ONLY' }, '*'); }
+          };
+          list.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+function openFullPlayer() { 
+	document.body.classList.add('no-scroll');
+    document.querySelector('header').classList.add('hide-ui');
+    document.querySelector('footer').classList.add('hide-ui');
+    
+    document.body.style.paddingTop = '0';
+
+    frame.style.display = 'block';
+    frame.classList.add('full-frame');
+    
+    updateIframeHeight();
+    
+    searchContainer.style.display = 'none';
+    mini.classList.remove('active');
+    
+    frame.style.height = window.innerHeight + 'px';
+    frame.contentWindow.postMessage({ type: 'OPEN_CURRENT' }, '*');
+}
+
+    function togglePlay() { frame.contentWindow.postMessage({ type: 'TOGGLE' }, '*'); }
+
+    searchInput.oninput = () => {
+      const val = searchInput.value.toLowerCase();
+      document.querySelectorAll('.folder-item').forEach(item => {
+        item.style.display = item.getAttribute('data-name').includes(val) ? 'flex' : 'none';
+      });
+    };
+
+    window.addEventListener('message', (e) => {
+      if (e.data.type === 'STATUS_DATA') {
+        document.getElementById('m-img').src = e.data.img;
+        document.getElementById('m-name').innerText = e.data.name;
+        document.getElementById('m-author').innerText = e.data.autor;
+        document.getElementById('m-path').setAttribute('d', e.data.isPlaying ? 'M6 19h4V5H6zm8-14v14h4V5h-4z' : 'M8 5v14l11-7z');
+        
+        if (frame.style.display === 'none' && e.data.name !== "-Name-") {
+            mini.classList.add('active');
+        }
+      }
+      
+    if (e.data.type === 'CLOSE_PLAYER') {
+        document.body.classList.remove('no-scroll');
+        document.querySelector('header').classList.remove('hide-ui');
+        document.querySelector('footer').classList.remove('hide-ui');
+        
+         document.body.style.paddingTop = '70px';
+
+        frame.style.display = 'none';
+        frame.classList.remove('full-frame');
+        
+        searchContainer.style.display = 'flex';
+        frame.contentWindow.postMessage({ type: 'GET_STATUS' }, '*');
+    }
+    });
+
+    loadFolders();
+    
+function updateIframeHeight() {
+    const frame = document.getElementById('player-frame');
+    if (!frame) return;
+
+    if (frame.classList.contains('full-frame')) {
+        frame.style.height = window.innerHeight + 'px';
+    } else {
+        frame.style.height = (window.innerHeight - 60) + 'px';
+    }
+}
+
+	window.addEventListener('load', updateIframeHeight);
+	window.addEventListener('resize', updateIframeHeight);
+	window.addEventListener('orientationchange', () => {
+   	setTimeout(updateIframeHeight, 200);
+	});
+  </script>
+</body>
+</html>
