@@ -68,21 +68,27 @@
                     div.className = 'folder-item';
                     div.setAttribute('data-name', item.name.toLowerCase());
                     div.innerHTML = `<img src="${item.icon}" class="folder-icon"><div class="folder-info"><b>${item.name}</b><br></div>`;
+                    
                     div.onclick = () => {
                         isPlayingFavorites = false;
-                        openFullPlayer();
+                        
+                        
+                        
                         if (currentLoadedUrl !== item.data) {
                             currentLoadedUrl = item.data;
+                            
                             frame.contentWindow.postMessage({
                                 type: 'LOAD_PLAYLIST',
                                 url: item.data,
                                 noPlay: true
                             }, '*');
+                            
                         } else {
                             frame.contentWindow.postMessage({
                                 type: 'SHOW_LIST_ONLY'
                             }, '*');
                         }
+                        openFullPlayer();
                     };
                     list.appendChild(div);
                 });
