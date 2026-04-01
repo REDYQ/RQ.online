@@ -20,67 +20,53 @@
             reNon: '<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>',
             reOne: '<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z"/>'
         };
-async function init(isPreload = false) {
-    if (!JSON_URL) return;
-    isInitializing = true;
-    try {
-        const res = await fetch(JSON_URL);
-        tracks = await res.json();
-        
-        // 1. Отрисовываем список (это нужно всегда)
-        renderPlaylist();
-
-const nothingIsPlaying = !audio.src || audio.src === window.location.href || audio.paused;
-        // 2. Условие: загружаем данные первого трека (loadTrack) только если:
-        // - это НЕ фоновая подгрузка (!isPreload)
-        // - ИЛИ если сейчас ВООБЩЕ ничего не играет (!audio.src)
-        if (!isPreload || !audio.src || audio.src === window.location.href) {
-            currentIdx = 0;
-            loadTrack(0, false); // Загрузить текст, но не включать звук
-            
-            
-            // Сбрасываем прогресс, только если это не фоновая загрузка
-            if (!isPreload) {
-                document.getElementById('p-bar').style.width = '0%';
-                document.getElementById('curr').innerText = "0:00";
-                document.getElementById('dur').innerText = "0:00";
+        async function init(isPreload = false) {
+            if (!JSON_URL) return;
+            isInitializing = true;
+            try {
+                if (!isPreload) {
+                    audio.pause();
+                    audio.src = "";
+                    isPlaying = false;
+                    currentIdx = 0;
+                    if (icon) icon.src = "";
+                    document.getElementById('p-bar').style.width = '0%';
+                    document.getElementById('curr').innerText = "0:00";
+                    document.getElementById('dur').innerText = "0:00";
+                    updatePlayBtn();
+                }
+                const res = await fetch(JSON_URL);
+                tracks = await res.json();
+                const listScreen = document.getElementById('playlist-screen');
+                const playerScreen = document.getElementById('player-screen');
+                if (listScreen) listScreen.className = 'screen screen-active';
+                if (playerScreen) playerScreen.className = 'screen screen-hidden';
+                renderPlaylist();
+                document.getElementById('playlist-screen').className = 'screen screen-active';
+                document.getElementById('player-screen').className = 'screen screen-hidden';
+                if (!isPreload) {
+                    loadTrack(0, false);
+                }
+                if (typeof updateIcons === 'function') updateIcons();
+            } catch (e) {
+                console.error("Ошибка инициализации списка:", e);
+            } finally {
+                isInitializing = false;
             }
         }
-
-        // 3. ВСЕГДА принудительно открываем экран списка при заходе в папку
-// 3. ВСЕГДА принудительно открываем экран списка и скрываем плеер
-const listScreen = document.getElementById('playlist-screen');
-const playerScreen = document.getElementById('player-screen');
-
-if (listScreen) listScreen.className = 'screen screen-active';
-if (playerScreen) playerScreen.className = 'screen screen-hidden';
-
-
-        if (typeof updateIcons === 'function') updateIcons();
-    } catch (e) {
-        console.error("Ошибка инициализации:", e);
-    } finally {
-        isInitializing = false;
-    }
-}
-
 
         function renderPlaylist() {
             let html = '';
             let lastSource = null;
-            
-            const playingUrl = audio.src ? audio.src.split('/').pop() : "";
-
+            const currentNameInPlayer = document.getElementById('track-name').innerText;
+            const currentAuthorInPlayer = document.getElementById('track-author').innerText;
             tracks.forEach((t, i) => {
                 if (t.source && t.source !== lastSource) {
                     html += `<div class="group-header">${t.source}</div>`;
                     lastSource = t.source;
                 }
-        const fileFromList = t.url ? t.url.split('/').pop() : "";
-        const isActive = (playingUrl === fileFromList && playingUrl !== "");
-
-        
-        
+                const isCurrent = (t.name === currentNameInPlayer && currentNameInPlayer !== "");
+                const isPlayingNow = isCurrent && isPlaying;
                 html += `
             <div class="track-item ${i === currentIdx ? 'active' : ''}" id="track-${i}" onclick="selectTrack(${i})">
                 <div class="bars-wrapper"><div class="playing-bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div></div>
@@ -88,6 +74,7 @@ if (playerScreen) playerScreen.className = 'screen screen-hidden';
                 <div class="item-info"><b>${t.name}</b><br><small>${t.autor}</small></div>
                 </div>
             </div>`;
+                if (isCurrent) currentIdx = i;
             });
             document.getElementById('list').innerHTML = html;
         }
@@ -99,23 +86,14 @@ if (playerScreen) playerScreen.className = 'screen screen-hidden';
             }, '*');
         }
 
-function selectTrack(i) {
-    const selectedTrack = tracks[i];
-    const currentAudioSrc = audio.src;
-
-    // Сравниваем прямую ссылку на файл (url), а не просто индекс в списке
-    // decodeURIComponent нужен, чтобы сравнение работало, если в ссылке есть пробелы или спецсимволы
-    if (currentAudioSrc.includes(selectedTrack.url) || currentAudioSrc === selectedTrack.url) {
-        // Если это тот же самый файл, который уже играет — просто открываем плеер
-        toggleScreen('player');
-    } else {
-        // Если файл другой (даже если индекс в папке тот же самый) — загружаем его
-        currentIdx = i;
-        loadTrack(i, true);
-        toggleScreen('player');
-    }
-}
-
+        function selectTrack(i) {
+            if (currentIdx === i && audio.src) toggleScreen('player');
+            else {
+                currentIdx = i;
+                loadTrack(i, true);
+                toggleScreen('player');
+            }
+        }
 
         function setBgMode(mode) {
             const t = tracks[currentIdx];
@@ -147,60 +125,38 @@ function selectTrack(i) {
             }
         }
 
-function loadTrack(idx, play) {
-    const t = tracks[idx];
-    if (!t) return;
-
-    // ПРОВЕРКА: Если мы НЕ нажимали "Play" (play = false)
-    // И при этом сейчас УЖЕ играет какая-то музыка...
-    if (!play && !audio.paused && audio.src !== "") {
-        return; 
-    }
-
-    // Если всё же нужно загрузить трек (при старте или при клике):
-    currentIdx = idx;
-    
-    // Обновляем обложку и текст
-    if (icon) icon.src = t.icon;
-    document.getElementById('track-name').innerText = t.name;
-    document.getElementById('track-author').innerText = t.autor;
-
-    // Устанавливаем музыку (только если реально меняем трек)
-    audio.src = t.music;
-    
-    // Громкость и инфо
-    let volValue = parseInt(t.volume_master);
-    audio.volume = (volValue === 0) ? 1.0 : (Math.max(0.01, (volValue || 100) / 100));
-    
-    document.getElementById('info-source').innerText = t.source || '-';
-    document.getElementById('info-episode').innerText = t.episode || '-';
-    document.getElementById('info-type').innerText = t.type || '-';
-    document.getElementById('info-full').innerText = t.full || '-';
-
-    // Видео-кнопка
-    const hasVideo = t.video && t.video !== '#';
-    document.getElementById('sw-video').classList.toggle('disabled', !hasVideo);
-    document.getElementById('btn-watch-video').style.display = hasVideo ? 'block' : 'none';
-
-    updateBgVisual();
-
-    // Запускаем музыку, если был клик (play = true)
-    if (play) {
-        audio.play();
-        isPlaying = true;
-    }
-
-    // Динамический фон по обложке
-    icon.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 1; canvas.height = 1;
-        ctx.drawImage(icon, 0, 0, 1, 1);
-        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-        document.documentElement.style.setProperty('--bg-dynamic', `rgb(${r},${g},${b})`);
-    };
-}
-
+        function loadTrack(idx, play) {
+            const t = tracks[idx];
+            if (!t) return;
+            const currentName = document.getElementById('track-name').innerText;
+            if (!play && currentName !== "" && isPlaying) {
+                renderPlaylist();
+                return;
+            }
+            currentIdx = idx;
+            icon.src = t.icon;
+            document.getElementById('track-name').innerText = t.name;
+            document.getElementById('track-author').innerText = t.autor;
+            audio.src = t.music;
+            let volValue = parseInt(t.volume_master);
+            audio.volume = (volValue === 0) ? 1.0 : (Math.max(0.01, (volValue || 100) / 100));
+            document.getElementById('info-source').innerText = t.source || '-';
+            document.getElementById('info-episode').innerText = t.episode || '-';
+            document.getElementById('info-type').innerText = t.type || '-';
+            document.getElementById('info-full').innerText = t.full || '-';
+            document.getElementById('sw-video').classList.toggle('disabled', !t.video || t.video === '#');
+            document.getElementById('btn-watch-video').style.display = (!t.video || t.video === '#') ? 'none' : 'block';
+            updateBgVisual();
+            document.querySelectorAll('.track-item').forEach((el, i) => {
+                el.classList.remove('playing');el.classList.toggle('active', i === idx);
+            });
+            icon.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 1;canvas.height = 1;ctx.drawImage(icon, 0, 0, 1, 1);
+                const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+                document.documentElement.style.setProperty('--bg-dynamic', `rgb(${r},${g},${b})`);
+            };
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: t.name,
@@ -416,27 +372,11 @@ function loadTrack(idx, play) {
                 updateFavButton();
             }
             if (e.data.type === 'LOAD_PLAYLIST') {
+                JSON_URL = e.data.url;
+                isInitializing = false;
                 const isPreload = e.data.noPlay === true;
-                init(isPreload); 
-    if (isPlaying && isPreload) {
-        JSON_URL = e.data.url;
-        // Просто подгружаем список песен для отображения, без сброса плеера
-        fetch(JSON_URL)
-            .then(res => res.json())
-            .then(data => {
-                tracks = data; 
-                renderPlaylist(); // Обновляем только список (визуально)
-            });
-    } else {
-        // Если ничего не играет или нажали "играть", делаем полную инициализацию
-        JSON_URL = e.data.url;
-        isInitializing = false;
-        init(isPreload);
-    }
-                
-                if (typeof toggleScreen === 'function') {
-                    toggleScreen('list');
-                }
+                init(isPreload);
+                if (typeof toggleScreen === 'function') toggleScreen('list');
                 if (!isPreload) {
                     if (typeof playTrack === 'function') playTrack(0);
                 }
@@ -501,3 +441,20 @@ function loadTrack(idx, play) {
         window.addEventListener('resize', fixHeight);
         window.addEventListener('orientationchange', fixHeight);
         fixHeight();
+       
+      
+function syncState() {
+    window.parent.postMessage({
+        type: 'PLAYER_STATE',
+        trackSrc: songs[songIndex].src, // Используем src как уникальный ID
+        isPlaying: !audio.paused,
+        trackInfo: {
+            title: title.innerText,
+            artist: artist.innerText,
+            img: cover.src
+        }
+    }, '*');
+}
+// Вызывай syncState() в функциях playSong, pauseSong и loadSong
+audio.addEventListener('play', syncState);
+audio.addEventListener('pause', syncState);

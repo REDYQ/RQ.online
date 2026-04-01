@@ -51,6 +51,10 @@
     </div>
         <input type="file" id="import-file" style="display:none" accept=".rq" onchange="handleFileSelect(event)">
     `;
+    
+        if (typeof updateTrackListVisuals === 'function') {
+        updateTrackListVisuals();
+    }
             favDiv.onclick = (e) => {
                 if (e.target.closest('.fav-menu-container') || e.target.closest('.fav-dropdown')) return;
                 if (favorites.length > 0) {
@@ -68,27 +72,21 @@
                     div.className = 'folder-item';
                     div.setAttribute('data-name', item.name.toLowerCase());
                     div.innerHTML = `<img src="${item.icon}" class="folder-icon"><div class="folder-info"><b>${item.name}</b><br></div>`;
-                    
                     div.onclick = () => {
                         isPlayingFavorites = false;
-                        
-                        
-                        
+                        openFullPlayer();
                         if (currentLoadedUrl !== item.data) {
                             currentLoadedUrl = item.data;
-                            
                             frame.contentWindow.postMessage({
                                 type: 'LOAD_PLAYLIST',
                                 url: item.data,
                                 noPlay: true
                             }, '*');
-                            
                         } else {
                             frame.contentWindow.postMessage({
                                 type: 'SHOW_LIST_ONLY'
                             }, '*');
                         }
-                        openFullPlayer();
                     };
                     list.appendChild(div);
                 });
@@ -237,7 +235,55 @@
                 }
             });
         };
-        window.addEventListener('message', (e) => {
+let currentPlayingSrc = ""; // Храним путь текущего трека
+let isCurrentlyPlaying = false; // Храним статус (играет/пауза)
+
+// 1. Функция обновления визуала списка
+function updateTrackListVisuals() {
+    const allTracks = document.querySelectorAll('.track-item'); // Или твой класс элемента списка
+    
+    allTracks.forEach(track => {
+        const trackSrc = track.getAttribute('data-src'); // Убедись, что при рендере ты добавляешь data-src
+        const waveAnimation = track.querySelector('.wave-animation'); // Твои полосочки
+
+        if (trackSrc === currentPlayingSrc) {
+            // Если это тот самый трек
+            track.classList.add('active-track'); 
+            if (isCurrentlyPlaying) {
+                waveAnimation.style.display = 'block'; // Включаем анимацию
+            } else {
+                waveAnimation.style.display = 'none'; // Пауза
+            }
+        } else {
+            // Если трек другой или мы в другой папке
+            track.classList.remove('active-track');
+            if (waveAnimation) waveAnimation.style.display = 'none';
+        }
+    });
+}
+
+// 2. Обновляем обработчик сообщений
+window.addEventListener('message', (e) => {
+    // Если пришел объект с состоянием плеера
+    if (e.data.type === 'PLAYER_STATE') {
+        currentPlayingSrc = e.data.trackSrc;
+        isCurrentlyPlaying = e.data.isPlaying;
+
+        // Обновляем мини-плеер
+        const miniTitle = document.getElementById('amusic-title'); // Проверь ID в своем HTML
+        const miniArtist = document.getElementById('amusic-artist');
+        if (miniTitle) miniTitle.innerText = e.data.trackInfo.title;
+        if (miniArtist) miniArtist.innerText = e.data.trackInfo.artist;
+
+        // Синхронизируем список треков
+        updateTrackListVisuals();
+    }
+
+
+
+
+
+
             if (e.data.type === 'TOGGLE_FAVORITE') {
                 const track = e.data.track;
                 const index = favorites.findIndex(f => f.music === track.music);
