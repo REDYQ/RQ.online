@@ -279,6 +279,16 @@ function updateTrackListVisuals() {
 }
 
 window.addEventListener('message', (e) => {
+    if (e.data.type === 'PLAYLIST_READY') {
+        if (pendingTrackIndex !== null) {
+            frame.contentWindow.postMessage({
+                type: 'PLAY_SPECIFIC_INDEX',
+                index: pendingTrackIndex
+            }, '*');
+            pendingTrackIndex = null;
+        }
+    }
+	
     if (e.data.type === 'PLAYER_STATE') {
         
         const trackData = e.data;
