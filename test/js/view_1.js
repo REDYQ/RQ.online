@@ -41,6 +41,8 @@
                 tracks = await res.json();
                 renderPlaylist();
                 
+window.parent.postMessage({ type: 'PLAYLIST_READY' }, '*');
+
                 const listScreen = document.getElementById('playlist-screen');
                 const playerScreen = document.getElementById('player-screen');
                 if (listScreen) listScreen.className = 'screen screen-active';
@@ -415,24 +417,11 @@ audio.onpause = () => {
             if (!isNaN(fullVideo.duration)) document.getElementById('v-dur').innerText = fmt(fullVideo.duration);
         };
         window.addEventListener('message', (e) => {
-			if (e.data.type === 'LOAD_SPECIFIC_TRACK') {
-			    JSON_URL = e.data.url;
-			    currentFolderId = e.data.folderId;
-			    
-			    // Загружаем данные
-			    fetch(JSON_URL).then(res => res.json()).then(data => {
-			        tracks = data;
-			        renderPlaylist();
-			        
-			        // Загружаем конкретный трек
-			        const targetIdx = e.data.trackIndex;
-			        if (tracks[targetIdx]) {
-			            currentIdx = targetIdx;
-			            loadTrack(currentIdx, true); // true — сразу играть
-			            toggleScreen('player');      // показываем экран плеера
-			        }
-			    });
-			}
+if (e.data.type === 'PLAY_SPECIFIC_INDEX') {
+    if (tracks && tracks[e.data.index]) {
+        selectTrack(e.data.index);
+    }
+}
         	
             if (e.data.type === 'LOAD_FAVORITES') {
                 tracks = e.data.tracks;

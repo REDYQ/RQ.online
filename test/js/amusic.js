@@ -78,6 +78,8 @@
                     const div = document.createElement('div');
                     div.className = 'folder-item';
                     div.setAttribute('data-name', item.name.toLowerCase());
+                    div.setAttribute('data-id', item.data); 
+                    div.setAttribute('data-number', item.number);
                     div.innerHTML = `<img src="${item.icon}" class="folder-icon"><div class="folder-info"><b>${item.name}</b><br></div>`;
                     div.onclick = () => {
                         isPlayingFavorites = false;
@@ -418,42 +420,22 @@ if (isCurrentlyPlaying && mName && mName.innerText !== "-Name-") {
             setTimeout(() => toast.style.opacity = 0, duration);
         }
        
+let pendingTrackIndex = null;
+
 async function handleShareLink() {
-    const query = window.location.search.substring(1); // Получаем всё, что после "?"
-    if (!query) return;
+    const query = window.location.search.substring(1);
+    if (!query || !query.includes('_')) return;
 
-    // Разбиваем строку "25_1" на id папки и номер трека
-    const [folderId, trackPos] = query.split('_');
-    if (!folderId || !trackPos) return;
+    const [numFromUrl, trackPos] = query.split('_');
+    pendingTrackIndex = parseInt(trackPos) - 1;
 
-    // Находим нужную папку в списке (мы знаем её ID, который хранится в data.json)
-    // Ждем, пока папки загрузятся, если вызов идет сразу
     const checkData = setInterval(() => {
-        const folders = document.querySelectorAll('.folder-item');
-        if (folders.length > 1) { // > 1, так как первая — "Избранное"
+        const targetFolder = document.querySelector(`.folder-item[data-number="${numFromUrl}"]`);
+        if (targetFolder) {
             clearInterval(checkData);
-            
-            // Находим папку по совпадению data-url (или id, который ты передаешь)
-            // В твоем коде при клике используется item.data. 
-            // Предположим, folderId из ссылки соответствует части URL из JSON.
-            
-            // Эмулируем процесс открытия:
-            isPlayingFavorites = false;
-            sessionStorage.setItem('opened_folder_id', folderId);
-            openFullPlayer();
-
-            // Отправляем команду во фрейм загрузить конкретную папку и трек
-            // Мы передаем trackIndex: trackPos - 1 (так как в ссылке отсчет с 1, а в коде с 0)
-            frame.contentWindow.postMessage({
-                type: 'LOAD_SPECIFIC_TRACK',
-                url: folderId,
-                folderId: folderId,
-                trackIndex: parseInt(trackPos) - 1
-            }, '*');
+            targetFolder.click(); 
         }
     }, 100);
 }
 
-// Вызываем проверку при загрузке страницы
 window.addEventListener('load', handleShareLink);
-       
