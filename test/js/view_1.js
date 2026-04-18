@@ -418,8 +418,18 @@ audio.onpause = () => {
         };
         window.addEventListener('message', (e) => {
 if (e.data.type === 'PLAY_SPECIFIC_INDEX') {
-    if (tracks && tracks[e.data.index]) {
-        selectTrack(e.data.index);
+    if (tracks && tracks.length > 0 && tracks[e.data.index]) {
+        currentIdx = e.data.index;
+        loadTrack(currentIdx, true);
+        toggleScreen('player');
+    } else {
+        setTimeout(() => {
+            if (tracks[e.data.index]) {
+                currentIdx = e.data.index;
+                loadTrack(currentIdx, true);
+                toggleScreen('player');
+            }
+        }, 200);
     }
 }
         	

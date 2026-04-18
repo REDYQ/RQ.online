@@ -443,7 +443,10 @@ async function handleShareLink() {
         const targetFolder = document.querySelector(`.folder-item[data-number="${numFromUrl}"]`);
         if (targetFolder) {
             clearInterval(checkData);
-            targetFolder.click(); 
+            openFullPlayer(); 
+            setTimeout(() => {
+                targetFolder.click();
+            }, 300);
         }
     }, 100);
 }
