@@ -156,6 +156,11 @@ window.parent.postMessage({ type: 'PLAYLIST_READY' }, '*');
             if (!t) return;
             
     currentIdx = idx;
+    
+    audio.pause();
+    audio.removeAttribute('src'); 
+    audio.load(); 
+    
     audio.src = t.music;
     icon.src = t.icon;
             
@@ -207,7 +212,9 @@ window.parent.postMessage({ type: 'PLAYLIST_READY' }, '*');
                 audio.play().catch(() => {});
                 isPlaying = true;
                 sessionStorage.setItem('playing_folder_id', currentFolderId);
-            }
+            } else {
+       	 isPlaying = false;
+   	 }
             updatePlayBtn();
             renderPlaylist();
             updateFavButton();
@@ -418,10 +425,19 @@ audio.onpause = () => {
         };
         window.addEventListener('message', (e) => {
 if (e.data.type === 'PLAY_SPECIFIC_INDEX') {
+	window.parent.postMessage({ type: 'GET_FAVORITES' }, '*'); 
     if (tracks && tracks.length > 0 && tracks[e.data.index]) {
         currentIdx = e.data.index;
-        loadTrack(currentIdx, true);
-        toggleScreen('player');
+        
+        setTimeout(() => {
+            loadTrack(currentIdx, true); 
+            toggleScreen('player');
+            updateFavButton();
+            
+            if (audio.paused) {
+                audio.play().catch(e => console.log("Принудительный запуск"));
+            }
+        }, 300);
     } else {
         setTimeout(() => {
             if (tracks[e.data.index]) {

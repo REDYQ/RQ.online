@@ -288,6 +288,13 @@ window.addEventListener('message', (e) => {
             pendingTrackIndex = null;
         }
     }
+    
+if (e.data.type === 'GET_FAVORITES') {
+    frame.contentWindow.postMessage({
+        type: 'SYNC_FAVORITES',
+        favorites: favorites
+    }, '*');
+}
 	
     if (e.data.type === 'PLAYER_STATE') {
         
