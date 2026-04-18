@@ -156,11 +156,6 @@ window.parent.postMessage({ type: 'PLAYLIST_READY' }, '*');
             if (!t) return;
             
     currentIdx = idx;
-    
-    audio.pause();
-    audio.removeAttribute('src'); 
-    audio.load(); 
-    
     audio.src = t.music;
     icon.src = t.icon;
             
@@ -183,6 +178,7 @@ window.parent.postMessage({ type: 'PLAYLIST_READY' }, '*');
             document.getElementById('sw-video').classList.toggle('disabled', !t.video || t.video === '#');
             document.getElementById('btn-watch-video').style.display = (!t.video || t.video === '#') ? 'none' : 'block';
             updateBgVisual();
+            updateFavButton();
             document.querySelectorAll('.track-item').forEach((el, i) => {
                 el.classList.remove('playing');el.classList.toggle('active', i === idx);
             });
@@ -208,17 +204,17 @@ window.parent.postMessage({ type: 'PLAYLIST_READY' }, '*');
                 navigator.mediaSession.setActionHandler('play', () => audio.play());
                 navigator.mediaSession.setActionHandler('pause', () => audio.pause());
             }
-            if (play) {
-                audio.play().catch(() => {});
-                isPlaying = true;
-                sessionStorage.setItem('playing_folder_id', currentFolderId);
-            } else {
-       	 isPlaying = false;
-   	 }
+    if (play) {
+        setTimeout(() => {
+            audio.play().catch(() => console.log("Нужен клик пользователя"));
+            isPlaying = true;
+            sessionStorage.setItem('playing_folder_id', currentFolderId);
             updatePlayBtn();
-            renderPlaylist();
-            updateFavButton();
-        }
+            syncMediaUI(true);
+        }, 50);
+    }
+    renderPlaylist();
+}
 
 function syncMediaUI(playing) {
     const t = tracks[currentIdx];
@@ -425,27 +421,13 @@ audio.onpause = () => {
         };
         window.addEventListener('message', (e) => {
 if (e.data.type === 'PLAY_SPECIFIC_INDEX') {
-	window.parent.postMessage({ type: 'GET_FAVORITES' }, '*'); 
-    if (tracks && tracks.length > 0 && tracks[e.data.index]) {
-        currentIdx = e.data.index;
-        
+    if (e.data.favs) currentFavorites = e.data.favs;
+    
+    if (tracks && tracks[e.data.index]) {
+        toggleScreen('player');
         setTimeout(() => {
-            loadTrack(currentIdx, true); 
-            toggleScreen('player');
-            updateFavButton();
-            
-            if (audio.paused) {
-                audio.play().catch(e => console.log("Принудительный запуск"));
-            }
-        }, 300);
-    } else {
-        setTimeout(() => {
-            if (tracks[e.data.index]) {
-                currentIdx = e.data.index;
-                loadTrack(currentIdx, true);
-                toggleScreen('player');
-            }
-        }, 200);
+            loadTrack(e.data.index, true);
+        }, 100);
     }
 }
         	

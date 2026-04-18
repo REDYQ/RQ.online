@@ -283,7 +283,8 @@ window.addEventListener('message', (e) => {
         if (pendingTrackIndex !== null) {
             frame.contentWindow.postMessage({
                 type: 'PLAY_SPECIFIC_INDEX',
-                index: pendingTrackIndex
+                index: pendingTrackIndex,
+                favs: favorites
             }, '*');
             pendingTrackIndex = null;
         }
