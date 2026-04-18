@@ -422,12 +422,21 @@ audio.onpause = () => {
         window.addEventListener('message', (e) => {
 if (e.data.type === 'PLAY_SPECIFIC_INDEX') {
     if (e.data.favs) currentFavorites = e.data.favs;
-    
     if (tracks && tracks[e.data.index]) {
         toggleScreen('player');
         setTimeout(() => {
             loadTrack(e.data.index, true);
-        }, 100);
+            let playAttempts = 0;
+            const forcePlay = setInterval(() => {
+                if (!audio.paused || playAttempts > 10) {
+                    clearInterval(forcePlay);
+                } else {
+                    audio.play().catch(() => {});
+                    playAttempts++;
+                }
+            }, 300);
+            updateFavButton();
+        }, 150);
     }
 }
         	
