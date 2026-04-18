@@ -205,13 +205,20 @@ window.parent.postMessage({ type: 'PLAYLIST_READY' }, '*');
                 navigator.mediaSession.setActionHandler('pause', () => audio.pause());
             }
     if (play) {
-        setTimeout(() => {
-            audio.play().catch(() => console.log("Нужен клик пользователя"));
+        audio.play().then(() => {
             isPlaying = true;
             sessionStorage.setItem('playing_folder_id', currentFolderId);
             updatePlayBtn();
             syncMediaUI(true);
-        }, 50);
+        }).catch(error => {
+            isPlaying = false;
+            updatePlayBtn();
+            syncMediaUI(false);
+        });
+    } else {
+        isPlaying = false;
+        updatePlayBtn();
+        renderPlaylist();
     }
     renderPlaylist();
 }
