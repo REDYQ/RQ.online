@@ -45,8 +45,9 @@ async function renderList(data, containerId) {
         
         const wrapper = document.createElement('div');
         wrapper.className = 'anime-wrapper';
+        const uniqueId = `${containerId}-${item.id}`;
         wrapper.innerHTML = `
-            <div class="folder-item" data-name="${item.name.toLowerCase()}" onclick="toggleFolder(this, '${item.id}')">
+            <div class="folder-item" data-name="${item.name.toLowerCase()}" onclick="toggleFolder(this, '${uniqueId}', '${item.id}')">
                 <img src="${GIT_COVER}${item.id}.jpg" class="folder-icon">
                 <div class="folder-info">
                     <b>${item.name}</b>
@@ -56,7 +57,7 @@ async function renderList(data, containerId) {
                 <img src="${HASMUSIC_AMUSIC_ICON_URL}" class="music-icon ${hasMusic ? 'visible' : ''}" onclick="handleMusicClick(event, ${hasMusic}, '${item.name}')">
                 <img src="${HASMUSIC_BY_TEST_AMUSIC_ICON_URL}" class="music-icon-t ${hasMusicByTest ? 'visible' : ''}" onclick="handleMusicByTestClick(event, ${hasMusicByTest}, '${item.name}')">
             </div>
-            <div class="sub-list" id="list-${item.id}"></div>
+            <div class="sub-list" id="list-${uniqueId}"></div>
         `;
         list.appendChild(wrapper);
     });
@@ -93,12 +94,13 @@ function switchScreen(screen) {
     }
 }
 
-async function toggleFolder(element, id) {
-    const subList = document.getElementById(`list-${id}`);
+async function toggleFolder(element, uniqueId, originalId) {
+    const subList = document.getElementById(`list-${uniqueId}`);
     const isActive = element.classList.contains('active');
 
     if (!isActive) {
-        document.querySelectorAll('.folder-item.active').forEach(activeEl => {
+        const container = element.closest('.container');
+        container.querySelectorAll('.folder-item.active').forEach(activeEl => {
             activeEl.classList.remove('active');
             const openList = activeEl.nextElementSibling;
             if (openList) {
@@ -106,17 +108,13 @@ async function toggleFolder(element, id) {
                 openList.style.maxHeight = null;
             }            
         });
-        document.querySelectorAll('.sub-list.open').forEach(openList => {
-            openList.classList.remove('open');
-            openList.style.maxHeight = null; 
-        });
 
         element.classList.add('active');
         subList.classList.add('open');
         subList.style.maxHeight = subList.scrollHeight + "px";
 
         if (subList.getAttribute('data-loaded') !== 'true') {
-            await fetchSubItems(id, subList);
+            await fetchSubItems(originalId, subList);
             subList.style.maxHeight = subList.scrollHeight + "px";
         }
     } else {
@@ -246,11 +244,11 @@ overlay.onclick = () => {
 };
 
 function renderDrawerMenu() {
-	const allListVisible = document.getElementById('all-list-container').style.display !== 'none';
+	const isAllVisible = document.getElementById('all-list-container').style.display !== 'none';
     drawerContent.innerHTML = `
-        <div class="drawer-item" id="btn-all-list">All List</div>
+        <div class="drawer-item ${isAllVisible ? 'active-screen' : ''}" id="btn-all-list">All List</div>
         
-        <div class="drawer-item" id="btn-my-list" style="display: flex; justify-content: space-between; align-items: center; background: none;">
+        <div class="drawer-item ${!isAllVisible ? 'active-screen' : ''}" id="btn-my-list" style="display: flex; justify-content: space-between; align-items: center; background: none;">
             <span>Мой список</span>
             <div class="more-menu-container" style="position: relative;">
                 <div id="more-trigger" style="cursor: pointer; font-size: 24px; padding: 0 5px;">⋮</div>
@@ -322,11 +320,6 @@ function setupDrawerEvents() {
             }
         };
         input.click();
-    };
-
-    const setActiveTab = (activeBtn, inactiveBtn) => {
-        activeBtn.classList.add('active-screen');
-        inactiveBtn.classList.remove('active-screen');
     };
 
     btnAll.onclick = () => {
