@@ -169,6 +169,19 @@
 
 .music-icon.visible { opacity: 1; }
 
+/*Test Server*/
+.music-icon-t {
+    position: absolute;
+    top: 50px;
+    right: 15px;
+    width: 18px;
+    height: 18px;
+    opacity: 0.1;
+}
+
+.music-icon-t.visible { opacity: 1; }
+/*END*/
+
 .status-label {
     font-size: 12px;
     color: #888;
@@ -250,13 +263,25 @@
     border-radius: 30px;
     font-size: 14px;
     z-index: 9999;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    white-space: nowrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    max-width: 95vw;
+    min-width: 250px;
+    width: fit-content;
+    text-align: center;
+    
+    opacity: 0;
+    pointer-events: none;
 }
 
 #toast.show {
     transform: translateX(-50%) translateY(0);
+    
+    opacity: 1;
+    pointer-events: auto;
 }
 
 #app_comment {
@@ -293,6 +318,12 @@
     background: #252525;
     cursor: pointer;
     font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.active-screen {
+    background: rgba(255, 255, 255, 0.1) !important;
+    font-weight: bold;
 }
 
 .drawer-divider {
