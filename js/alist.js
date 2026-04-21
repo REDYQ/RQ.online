@@ -2,86 +2,111 @@ document.getElementById('current-year').textContent = new Date().getFullYear();
 
 const JSON_MAIN = 'https://raw.githubusercontent.com/REDYQ/Anime_List/refs/heads/main/file/data.json'; // AList data
 const AMUSIC_SERVER_CHECK = 'https://raw.githubusercontent.com/REDYQ/Anime_Music/refs/heads/main/file/data.json'; // AMusic data
+const AMUSIC_TEST_SERVER_CHECK = 'https://raw.githubusercontent.com/REDYQ/Anime_Music/refs/heads/main/file/test/data.json'; // AMusic data (Test Server)
 const GIT_BASE = 'https://raw.githubusercontent.com/REDYQ/Anime_List/refs/heads/main/file/data_id/'; // вложенные JSON
 const GIT_COVER = 'https://raw.githubusercontent.com/REDYQ/Anime_List/refs/heads/main/file/icon/cover/'; // cover
 const GIT_ASSET = 'https://raw.githubusercontent.com/REDYQ/Anime_List/refs/heads/main/file/icon/asset/'; // asset
-const AMUSIC_ICON_URL = 'https://raw.githubusercontent.com/REDYQ/Anime_List/refs/heads/main/file/icon/system/ic1.jpg'; // AMusic icon
+const HASMUSIC_AMUSIC_ICON_URL = 'https://raw.githubusercontent.com/REDYQ/Anime_List/refs/heads/main/file/icon/system/ic1.jpg'; // has Music
+const HASMUSIC_BY_TEST_AMUSIC_ICON_URL = 'https://raw.githubusercontent.com/REDYQ/Anime_List/refs/heads/main/file/icon/system/ic2.jpg'; // has Music By Test (Test Server)
 
 const searchInput = document.getElementById('search-input');
 
-async function loadFolders(onlyMy = false) {
-    const list = document.getElementById('folder-list');
-    list.innerHTML = '<div style="padding: 20px; text-align: center; color: #555;">Загрузка...</div>';
+let ALL_ANIME_DATA = [];
+
+async function loadFolders() {
+    const allContainer = document.getElementById('all-list-container');
+    allContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #555;">Загрузка...</div>';
+    
     try {
         const res = await fetch(JSON_MAIN);
-        const data = await res.json();
-        
-        if (onlyMy) {
-            const cacheData = localStorage.getItem('my_anime_list');
-            
-            if (!cacheData || cacheData === "[]") {
-                list.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; gap: 20px;">
-                        <div style="color: #555; font-size: 14px;">Ваш список пуст</div>
-                        <button onclick="triggerImport()" style="background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: bold; font-family: inherit;">
-                            IMPORT
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-
-            const myIds = JSON.parse(cacheData);
-            data = data.filter(item => myIds.includes(item.id));
-        }
-
-        renderItems(data);        
-        
+        ALL_ANIME_DATA = await res.json();
+        renderList(ALL_ANIME_DATA, 'all-list-container');
+        updateMyList();
     } catch (e) {
-        console.error("Ошибка загрузки:", e);
-        list.innerHTML = `<div style="color:red; text-align:center;">Ошибка загрузки данных</div>`;
+        allContainer.innerHTML = `<div style="color:red; text-align:center;">Ошибка загрузки</div>`;
     }
-}        
+}
         
-async function renderItems(data) {
-    const list = document.getElementById('folder-list');
+async function renderList(data, containerId) {
+    const list = document.getElementById(containerId);
     list.innerHTML = '';
-    
     let musicChecklist = [];
+    let musicChecklistByTest = [];
     try {
-        const mRes = await fetch(AMUSIC_SERVER_CHECK);
-        musicChecklist = await mRes.json();
+        const [m1, m2] = await Promise.all([fetch(AMUSIC_SERVER_CHECK), fetch(AMUSIC_TEST_SERVER_CHECK)]);
+        musicChecklist = await m1.json();
+        musicChecklistByTest = await m2.json();
     } catch(e) {}
 
     data.forEach((item) => {
         const hasMusic = musicChecklist.some(m => m.name === item.name);
+        const hasMusicByTest = musicChecklistByTest.some(m => m.name === item.name);
         const isStatusHidden = item.status === "—";
+        
         const wrapper = document.createElement('div');
         wrapper.className = 'anime-wrapper';
+        const uniqueId = `${containerId}-${item.id}`;
         wrapper.innerHTML = `
-            <div class="folder-item" data-name="${item.name.toLowerCase()}" onclick="toggleFolder(this, '${item.id}')">
+            <div class="folder-item" data-name="${item.name.toLowerCase()}" onclick="toggleFolder(this, '${uniqueId}', '${item.id}')">
                 <img src="${GIT_COVER}${item.id}.jpg" class="folder-icon">
                 <div class="folder-info">
                     <b>${item.name}</b>
                     <div class="genre-label">${item.genre}</div>
-                    ${!isStatusHidden ? `<div class="status-label" style="text-align:left; font-size:11px; color:#888;">${item.status}</div>` : ''}
+                    ${!isStatusHidden ? `<div class="status-label" style="font-size:11px; color:#888;">${item.status}</div>` : ''}
                 </div>
-                <img src="${AMUSIC_ICON_URL}" class="music-icon ${hasMusic ? 'visible' : ''}" onclick="handleMusicClick(event, ${hasMusic}, '${item.name}')">
+                <img src="${HASMUSIC_AMUSIC_ICON_URL}" class="music-icon ${hasMusic ? 'visible' : ''}" onclick="handleMusicClick(event, ${hasMusic}, '${item.name}')">
+                <img src="${HASMUSIC_BY_TEST_AMUSIC_ICON_URL}" class="music-icon-t ${hasMusicByTest ? 'visible' : ''}" onclick="handleMusicByTestClick(event, ${hasMusicByTest}, '${item.name}')">
             </div>
-            <div class="sub-list" id="list-${item.id}">
-                <div style="padding: 20px; text-align: center; color: #555;">Загрузка...</div>
-            </div>
+            <div class="sub-list" id="list-${uniqueId}"></div>
         `;
         list.appendChild(wrapper);
     });
 }
 
-async function toggleFolder(element, id) {
-    const subList = document.getElementById(`list-${id}`);
+function updateMyList() {
+    const myContainer = document.getElementById('my-list-container');
+
+    if (!ALL_ANIME_DATA || ALL_ANIME_DATA.length === 0) {
+        myContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #555;">Загрузка данных...</div>';
+        return;
+    }
+
+    const rawData = localStorage.getItem('my_anime_list');
+    const myIds = rawData ? JSON.parse(rawData) : [];
+
+    if (myIds.length === 0) {
+        myContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; gap: 20px;">
+                <div style="color: #555; font-size: 14px;">Ваш список пуст</div>
+                <button onclick="triggerImport()" style="background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer;">IMPORT</button>
+            </div>`;
+    } else {
+        const filteredData = ALL_ANIME_DATA.filter(item => myIds.includes(item.id));
+        renderList(filteredData, 'my-list-container');
+    }
+}
+
+function switchScreen(screen) {
+    const allList = document.getElementById('all-list-container');
+    const myList = document.getElementById('my-list-container');
+    
+    if (screen === 'my') {
+        allList.style.display = 'none';
+        myList.style.display = 'block';
+        updateMyList();
+    } else {
+        allList.style.display = 'block';
+        myList.style.display = 'none';
+    }
+}
+
+async function toggleFolder(element, uniqueId, originalId) {
+    const subList = document.getElementById(`list-${uniqueId}`);
     const isActive = element.classList.contains('active');
 
     if (!isActive) {
-        document.querySelectorAll('.folder-item.active').forEach(activeEl => {
+        const container = element.closest('.container');
+        container.querySelectorAll('.folder-item.active').forEach(activeEl => {
             activeEl.classList.remove('active');
             const openList = activeEl.nextElementSibling;
             if (openList) {
@@ -89,17 +114,13 @@ async function toggleFolder(element, id) {
                 openList.style.maxHeight = null;
             }            
         });
-        document.querySelectorAll('.sub-list.open').forEach(openList => {
-            openList.classList.remove('open');
-            openList.style.maxHeight = null; 
-        });
 
         element.classList.add('active');
         subList.classList.add('open');
         subList.style.maxHeight = subList.scrollHeight + "px";
 
         if (subList.getAttribute('data-loaded') !== 'true') {
-            await fetchSubItems(id, subList);
+            await fetchSubItems(originalId, subList);
             subList.style.maxHeight = subList.scrollHeight + "px";
         }
     } else {
@@ -163,6 +184,18 @@ function handleMusicClick(event, hasMusic, name) {
         showToast("Тайтл отсутствует в AMusic");
     }
 }
+
+/*Test Server*/
+function handleMusicByTestClick(event, hasMusicByTest, name) {
+    event.stopPropagation();
+    
+    if (hasMusicByTest) {
+        window.open(`https://redyq.github.io/RQ.online/test/amusic.html`, '_blank');
+    } else {
+        showToast("Тайтл отсутствует на тестовом сервере AMusic");
+    }
+}
+/*END*/
        
 function showToast(message) {
     const toast = document.getElementById('toast');
@@ -186,23 +219,6 @@ brandName.onclick = () => {
     const moreTrigger = document.getElementById('more-trigger');
     const contextMenu = document.getElementById('context-menu');
 
-    if (btnAll) {
-        btnAll.onclick = () => {
-            drawer.classList.remove('open');
-            overlay.classList.remove('show');
-            loadFolders(false);
-        };
-    }
-
-    if (btnMy) {
-        btnMy.onclick = (e) => {
-            if (e.target.id === 'more-trigger') return;
-            drawer.classList.remove('open');
-            overlay.classList.remove('show');
-            loadFolders(true); 
-        };
-    }
-
     if (moreTrigger) {
         moreTrigger.onclick = (e) => {
             e.stopPropagation();
@@ -217,36 +233,47 @@ overlay.onclick = () => {
 };
 
 function renderDrawerMenu() {
+    const isAllVisible = document.getElementById('all-list-container').style.display !== 'none';
+    
     drawerContent.innerHTML = `
-        <div class="drawer-item" id="btn-all-list" style="background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 20px;">All List</div>
+        <div class="drawer-item ${isAllVisible ? 'active-screen' : ''}" id="btn-all-list">
+            <span">All List</span>
+        </div>
         
-        <div class="drawer-item" id="btn-my-list" style="display: flex; justify-content: space-between; align-items: center; background: none;">
+        <div class="drawer-item ${!isAllVisible ? 'active-screen' : ''}" id="btn-my-list">
             <span>Мой список</span>
-            <div class="more-menu-container" style="position: relative;">
-                <div id="more-trigger" style="cursor: pointer; font-size: 24px; padding: 0 5px;">⋮</div>
+            <div class="more-menu-container">
+                <div id="more-trigger" style="margin-bottom: 4px;">⋮</div>
                 <div class="context-menu" id="context-menu">
                     <div class="menu-item" id="export-btn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" /></svg>
                         EXPORT
                     </div>
                     <div class="menu-item" id="import-btn">
-                   	 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z" /></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z" /></svg>
                         IMPORT
                     </div>
                 </div>
             </div>
         </div>
     `;
-
     setupDrawerEvents();
 }
 
+
+const setActiveTab = (activeBtn, inactiveBtn) => {
+        activeBtn.classList.add('active-screen');
+        inactiveBtn.classList.remove('active-screen');
+    };
+    
 function setupDrawerEvents() {
     const moreTrigger = document.getElementById('more-trigger');
     const contextMenu = document.getElementById('context-menu');
+    const btnAll = document.getElementById('btn-all-list');
+    const btnMy = document.getElementById('btn-my-list');
 
     if (!moreTrigger || !contextMenu) return;
-
+    
     moreTrigger.onclick = (e) => {
         e.stopPropagation();
         contextMenu.classList.toggle('show');
@@ -287,17 +314,19 @@ function setupDrawerEvents() {
         input.click();
     };
 
-    document.getElementById('btn-all-list').onclick = () => {
+    btnAll.onclick = () => {
+        setActiveTab(btnAll, btnMy);
         drawer.classList.remove('open');
         overlay.classList.remove('show');
-        loadFolders(false);
+        switchScreen('all');
     };
 
-    document.getElementById('btn-my-list').onclick = (e) => {
+    btnMy.onclick = (e) => {
         if(e.target.id === 'more-trigger') return;
+        setActiveTab(btnMy, btnAll);
         drawer.classList.remove('open');
         overlay.classList.remove('show');
-        loadFolders(true);
+        switchScreen('my');
     };
 }
 
