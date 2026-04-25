@@ -85,7 +85,7 @@ async function renderList(data, containerId, isMyList = false, userItems = []) {
             const userFolder = myItems.find(u => u.id === item.id);
             const userPos = userFolder ? userFolder.pos.split(',').map(Number) : [];
 
-			await fetchSubItems(item.id, subList, userPos, isMyList);
+			await fetchSubItems(item.id, subList, userItems, isMyList);
 
             if (isTitles) {
                 subList.classList.add('open');
@@ -117,7 +117,7 @@ function updateMyList() {
     } else {
         myIds.sort((a, b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
         
-        const filteredData = ALL_ANIME_DATA.filter(item => myIds.some(u => u.id.split('_')[0] === item.id));
+        const filteredData = ALL_ANIME_DATA.filter(folder => myIds.some(u => u.id.split('_')[0] === folder.id));
         renderList(filteredData, 'my-list-container', true, myIds);
     }
 }
@@ -196,11 +196,9 @@ async function fetchSubItems(folderId, container, userItems = [], isMyList = fal
                         <span style="font-size: 10px; color: var(--accent); font-weight: bold;">${sub.type}</span>
                     </div>
                     
-                    <!-- Блок Озвучки/Студии -->
                     <div style="font-size: 12px; color: #ccc; margin-top: 2px;">${voiceover}</div>
                     
                     <div class="sub-center-row">
-                        <!-- Блок Пересмотров (скрываем если пусто) -->
                         ${relookCount ? `<span style="color: #888;">Пересмотрено ${relookCount} раз</span>` : `<span>${sub.year}</span>`}
                         <span>${episodes} эп.</span>
                     </div>
