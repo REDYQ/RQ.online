@@ -300,6 +300,16 @@ function closeModal() {
 }
 
 function finishEditing() {
+    SAVED_LIST.sort((a, b) => {
+        const [aFolder, aItem] = a.id.split('_').map(Number);
+        const [bFolder, bItem] = b.id.split('_').map(Number);
+        
+        if (aFolder !== bFolder) {
+            return aFolder - bFolder; 
+        }
+        return aItem - bItem;
+    });
+    
     const dataStr = JSON.stringify(SAVED_LIST, null, 2);
     const date = new Date().toLocaleDateString('ru-RU');
     const blob = new Blob([dataStr], { type: "application/octet-stream" });
