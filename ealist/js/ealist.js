@@ -230,7 +230,7 @@ function openEditModal(id, maxEps) {
             };
         } else {
             inputEps.removeAttribute('max');
-            inputEps.placeholder = "Количество серий";
+            inputEps.placeholder = "Ввод...";
             inputEps.oninput = null;
         }
     	
